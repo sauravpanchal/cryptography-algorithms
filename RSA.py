@@ -3,7 +3,7 @@
 
 # Import required modules
 import math
-from pprint import pprint
+
 # Convenience Functions
 def calculate_gcd(e, phi):
     return math.gcd(e, phi)
@@ -63,26 +63,43 @@ def get_keys(e, d, n):
     public_key, private_key = (e, n), (d, n)
     print("Public key =>", public_key)
     print("Private key =>", private_key)
-    return public_key, private_key
 
-def get_cipher(P, e, n):
+def get_cipher(P, e, n, p, q):
     if P < n:
-        C = ((P ** e) % (n)) 
+        C = ((P ** e) % (n))
+    C = modify_rsa(C, p, q)
+    print("After modification (Cipher) :", C)
     return C
 
-def get_plain_text(C, d, n):
-    P = ((C ** d) % (n))
+def get_plain_text(C, d, n, p, q):
+    P = modify_rsa(C, p, q, flag = 1, y = C)
+    P = ((P ** d) % (n))
+    print("After modification (Plain) :", P)
     return P
+
+
+# Modification over standard RSA.
+def modify_rsa(C, p, q, flag = 0, y = None):
+    base = (p + q) // 2
+    if flag == 1:
+        x = math.pow(base, y)
+        return int(x)
+    else:
+        y = math.log(C, base)
+        return y
 
 p, q = get_prime()
 n = calculate_n(p, q)
 phi_of_n = calculate_phi_of_n(n)
 e = get_e(phi_of_n = phi_of_n)
 d = get_d(e, phi_of_n = phi_of_n)
-public_key, private_key = get_keys(e, d, n)
+get_keys(e, d, n)
 
-C = get_cipher(p, e = e, n = n)
-print("C =>", C)
-
-P = get_plain_text(C, d = d, n = n)
-print("P =>",P)
+flag = int(input("Enter to use RSA as in Key-Exchange-Mode (0) or Cipher-Text-Mode (1) ? "))
+if not flag:
+    C = get_cipher(P = p, e = e, n = n, p = p, q = q)
+    P = get_plain_text(C, d = d, n = n, p = p, q = q)
+else:
+    m = int(input("Enter m ? "))
+    C = get_cipher(m, e = e, n = n, p = p, q = q)
+    P = get_plain_text(C, d = d, n = n, p = p, q = q)
